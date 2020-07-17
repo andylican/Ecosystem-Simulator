@@ -1,0 +1,133 @@
+import java.util.Queue;
+import java.util.LinkedList;
+class Sheep extends Animal {
+  Sheep(int health, int maxHealth) {
+    super(health,maxHealth);
+  }
+  public void eatPlant(Plant p) {
+    this.setHealth(Math.min(this.getHealth() + p.getHealth(),this.getMaxHealth()));
+  }
+  public void reproduce(Sheep s, World sim, Life[][] newMap) {
+    if(this.getHealth() > 20 && (s.getHealth() > 20) && (sim.getEmptyCount() != 0)) {
+      
+//    
+      int sheep = 0;
+      while(sheep == 0) {
+        int row = (int)(Math.random()*newMap.length);
+        int column = (int)(Math.random()*newMap[0].length);
+        if(newMap[row][column] == null) {
+          newMap[row][column] = new Sheep(10,this.getMaxHealth());
+          sheep++;
+        }
+      }
+      sim.setEmptyCount(sim.getEmptyCount()-1);
+      this.setHealth(this.getHealth()-10);
+      s.setHealth(s.getHealth()-10);
+      //System.out.println("baby sheep!!!");
+    }
+  }
+  public void move(int row, int column, World sim, int[][]moves) {
+    Life[][] newMap = sim.getMap();
+    boolean moved = false;
+    this.setMoved(true);
+    int counter = 0;
+    int direction = -1;
+    boolean noTarget = false;
+    while(!moved) {
+      //System.out.println("cantmove");
+      if(!noTarget) {
+        direction = this.findTarget(newMap,row,column,sim,moves);
+        //System.out.println(direction);
+        if(direction == -1) {
+          noTarget = true;
+        }
+      }
+      if(noTarget) {
+        //System.out.println("noplant");
+        direction = (int)(Math.random()*5);
+      }
+      //System.out.println("Sheep Direction: "+direction);
+      if(direction != 4) {
+        int newRow = row+moves[direction][0];
+        int newColumn = column+moves[direction][1];
+        if(sim.inBounds(newRow,newColumn) && (direction != this.getPrevDirection() || !noTarget)) {
+          
+          if(!(newMap[newRow][newColumn] instanceof Wolf) && !(newMap[newRow][newColumn] instanceof Sheep)) {
+            if(newMap[newRow][newColumn] instanceof Plant) {
+              Plant p = (Plant)newMap[newRow][newColumn];
+              this.eatPlant(p);
+            }
+            //System.out.println("p");
+            newMap[newRow][newColumn] = newMap[row][column];
+            newMap[row][column] = null;
+            moved = true;
+            this.setPrevDirection(this.oppositeDirection(direction));
+          } else if(newMap[newRow][newColumn] instanceof Sheep) {
+            Sheep s = (Sheep)newMap[newRow][newColumn];
+            this.reproduce(s,sim, newMap);
+            moved = true;
+            //System.out.println("s");
+          } else {
+            newMap[row][column] = null;
+            moved = true;
+          }
+        }
+      } else {
+        this.setPrevDirection(4);
+        moved = true;
+      }
+    }
+    //System.out.println("Sheep has moved");
+    sim.setMap(newMap);
+  }
+  public int findTarget(Life[][] newMap, int row, int column, World sim, int[][] moves) {
+    int[] currentPos = new int[3];
+    currentPos[0] = row;
+    currentPos[1] = column;
+    Queue<int[]>q = new LinkedList<>();
+    q.add(currentPos);
+    boolean foundSheep = false;
+    boolean foundPlant = false;
+    boolean [][] visited = new boolean[newMap.length][newMap[0].length];
+    visited[row][column] = true;
+    int nextDirection = -1;
+    while(!q.isEmpty() && !foundSheep) {
+      currentPos = q.remove();
+      if(currentPos[2]<=5) {
+        for(int i=0; i<4; i++) {
+          int newRow = currentPos[0]+moves[i][0];
+          int newColumn = currentPos[1]+moves[i][1];
+          if(sim.inBounds(newRow,newColumn)) {
+            if(!visited[newRow][newColumn]) {
+              if(newMap[newRow][newColumn] instanceof Plant) {
+                //System.out.println("AAAAA");
+              }
+              if(this.getHealth()>20) {
+                if(newMap[newRow][newColumn] instanceof Sheep) {
+                  if(newMap[newRow][newColumn].getHealth()>20) {
+                    nextDirection = i;
+                    foundSheep = true;
+                  }
+                } 
+              } 
+              
+              if(newMap[newRow][newColumn] instanceof Plant && !foundSheep && !foundPlant) {
+                //System.out.println("found plant");
+                nextDirection = i;
+                foundPlant = true;
+              }
+            }
+            int[] newPos = new int[3];
+            newPos[0] = newRow;
+            newPos[1] = newColumn;
+            newPos[2] = currentPos[2]+1;
+            visited[newRow][newColumn] = true;
+            q.add(newPos);
+          }
+        }
+      } 
+    }
+    
+    return nextDirection;
+  }
+}

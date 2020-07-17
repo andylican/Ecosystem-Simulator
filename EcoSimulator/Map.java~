@@ -1,0 +1,14 @@
+class Map {
+  private int rSize;
+  private int cSize;
+  private int pCount;
+  private int sCount;
+  private int wCount;
+  private Life[][] map;
+  public void createMap(int r, int c, int p, int s, int w) {
+    rSize = r;
+    cSize = c;
+    map = new Life[r][c];
+    
+  }
+}

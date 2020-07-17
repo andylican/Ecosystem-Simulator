@@ -1,0 +1,36 @@
+abstract class Animal extends Life {
+  private int maxHealth;
+  private boolean moved = false;
+  private int previousDirection = 4;
+  Animal(int health, int maxHealth) {
+    super(health);
+    this.maxHealth = maxHealth;
+  }
+  public int getMaxHealth() {
+    return maxHealth;
+  }
+  public boolean hasMoved() {
+    return moved;
+  }
+  public void setMoved(boolean b) {
+    moved = b;
+  }
+  public int getPrevDirection() {
+    return previousDirection;
+  }
+  public void setPrevDirection(int direction) {
+    previousDirection = direction;
+  }
+  public int oppositeDirection (int direction) {
+    if(direction == 0) {
+      return 2;
+    } else if(direction == 1) {
+      return 3;
+    } else if(direction == 2) {
+      return 0;
+    } else {
+      return 1;
+    }
+  }
+  abstract public void move(int row, int column, World sim, int[][]moves);
+}

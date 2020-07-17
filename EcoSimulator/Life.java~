@@ -1,0 +1,12 @@
+abstract class Life {
+  private int health;
+  public int getHealth() {
+    return health;
+  }
+  public void setHealth(int health) {
+    this.health = health;
+  }
+  Life (int health) {
+    this.health = health;
+  }
+}

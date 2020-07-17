@@ -1,0 +1,146 @@
+import java.util.Queue;
+import java.util.LinkedList;
+class Wolf extends Animal implements Comparable{
+  Wolf(int health, int maxHealth) {
+    super(health,maxHealth);
+  }
+  public int compareTo(Object o) {
+    Wolf w = (Wolf)o;
+    if(this.getHealth()>w.getHealth()) {
+      return 1;
+    } else if(this.getHealth()<w.getHealth()) {
+      return -1;
+    } else {
+      return 0;
+    }
+  }
+  public void eatSheep (Sheep s) {
+    int healthGained = s.getHealth();
+    this.setHealth(Math.min(this.getHealth()+healthGained,this.getMaxHealth()));
+  }
+  public void reproduce(Wolf w, World sim, Life[][] newMap) {
+    if(this.getHealth() > 20 && (w.getHealth() > 20) && (sim.getEmptyCount() != 0)) {  
+      int wolf = 0;
+      while(wolf == 0) {
+        int row = (int)(Math.random()*newMap.length);
+        int column = (int)(Math.random()*newMap[0].length);
+        if(newMap[row][column] == null) {
+          newMap[row][column] = new Wolf(10,this.getMaxHealth());
+          wolf++;
+        }
+      }
+      sim.setEmptyCount(sim.getEmptyCount()-1);
+      this.setHealth(this.getHealth()-10);
+      w.setHealth(w.getHealth()-10);
+    }
+  }
+  public void fight(Wolf w) {
+    if(this.compareTo(w)>0) {
+      w.setHealth(w.getHealth()-10);
+    } else if(this.compareTo(w)<0) {
+      this.setHealth(this.getHealth()-10);
+    } else {
+      this.setHealth(this.getHealth()-10);
+      w.setHealth(w.getHealth()-10);
+    }
+  }
+  public void move(int row, int column, World sim, int[][]moves) {
+    Life[][] newMap = sim.getMap();
+    boolean moved = false;
+    this.setMoved(true);
+    int counter = 0;
+    boolean noTarget = false;
+    int direction = -1;
+    while(!moved) {
+      if(!noTarget) {
+        direction = findTarget(newMap,row,column,sim,moves);
+        if(direction == -1) {
+          noTarget = true;
+        }
+      } 
+      if(noTarget) {
+        direction = (int)(Math.random()*5);
+      } 
+      if(direction != 4) {
+        int newRow = row+moves[direction][0];
+        int newColumn = column+moves[direction][1];
+        if(sim.inBounds(newRow,newColumn) && (direction != this.getPrevDirection() || !noTarget)) {
+          if(!(newMap[newRow][newColumn] instanceof Wolf)) {
+            if(newMap[newRow][newColumn] instanceof Sheep) {
+              Sheep s = (Sheep)newMap[newRow][newColumn];
+              this.eatSheep(s);
+            }
+            newMap[newRow][newColumn] = newMap[row][column];
+            newMap[row][column] = null;
+            this.setPrevDirection(this.oppositeDirection(direction));
+          } else {
+            Wolf w = (Wolf)newMap[newRow][newColumn];
+            if(this.getHealth()>20 && w.getHealth() > 20) {
+              this.reproduce(w,sim, newMap);
+            } else {
+              this.fight(w);
+              if(this.getHealth()<=0) {
+                newMap[row][column] = null;
+              }
+              if(w.getHealth()<=0) {
+                newMap[newRow][newColumn] = newMap[row][column];
+                newMap[row][column] = null;
+              }
+            }
+          }
+          moved = true;
+        }
+      } else {
+        moved = true;
+        this.setPrevDirection(4);
+      }
+    }
+    sim.setMap(newMap);
+    
+  }
+  public int findTarget(Life[][] newMap, int row, int column, World sim, int[][] moves) {
+    int nextDirection = -1;
+    boolean foundSheep = false;
+    boolean foundWolf = false;
+    int[] currentPos = new int[3];
+    currentPos[0] = row;
+    currentPos[1] = column;
+    boolean [][] visited = new boolean[newMap.length][newMap[0].length];
+    visited[row][column] = true;
+    Queue<int[]>q = new LinkedList<>();
+    q.add(currentPos);
+    
+    while(!q.isEmpty() && !foundWolf) {
+      currentPos = q.remove();
+      if(currentPos[2]<=20) {
+        for(int i=0; i<4; i++) {
+          int newRow = currentPos[0]+moves[i][0];
+          int newColumn = currentPos[1]+moves[i][1];
+          if(sim.inBounds(newRow,newColumn)) {
+            if(!visited[newRow][newColumn]) {
+              if(this.getHealth() > 20) {
+                if(newMap[newRow][newColumn] instanceof Wolf) {
+                  if(newMap[newRow][newColumn].getHealth()>20) {
+                    nextDirection = i;
+                    foundWolf = true;
+                  }
+                } 
+              } 
+              if(newMap[newRow][newColumn] instanceof Sheep && !foundSheep && !foundWolf) {
+                nextDirection = i;
+                foundSheep = true;
+              } 
+              int[] newPos = new int[3];
+              newPos[0] = newRow;
+              newPos[1] = newColumn;
+              newPos[2] = currentPos[2]+1;
+              visited[newRow][newColumn] = true;
+              q.add(newPos);
+            }
+          }
+        }
+      } 
+    }
+    return nextDirection;
+  }
+}

@@ -1,0 +1,5 @@
+class Plant extends Life {
+  Plant (int health) {
+    super(health);
+  }
+}

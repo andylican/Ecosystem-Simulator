@@ -1,0 +1,183 @@
+import java.util.Arrays;
+class World {
+  private int rows;
+  private int columns;
+  private int plantCount;
+  private int sheepCount;
+  private int wolfCount;
+  private int emptyCount;
+  private int turnCount;
+  private int plantHealth;
+  private int sheepHealth;
+  private int wolfHealth;
+  private Life[][] map;
+  private int [][]moves = {{1,0},{0,1},{-1,0},{0,-1}};
+  World(int rows, int columns, int plants, int sheep, int wolves, int plantHealth, int sheepHealth, int wolfHealth) {
+    this.rows = rows;
+    this.columns = columns;
+    emptyCount = rows*columns;
+    plantCount = plants;
+    sheepCount = sheep;
+    wolfCount = wolves;
+    this.plantHealth = plantHealth;
+    this.sheepHealth = sheepHealth;
+    this.wolfHealth = wolfHealth;
+    map = new Life[rows][columns];
+    System.out.println(rows);
+    System.out.println(columns);
+    createPlants(plantCount);
+    createSheep(sheepCount);
+    createWolves(wolfCount);
+  }
+  public Life[][] getMap() {
+    Life[][] newMap = new Life[rows][columns];
+    for(int i=0; i<rows; i++) {
+      newMap[i] = map[i].clone();
+    }
+    return newMap;
+  }
+  public void setMap(Life [][] newMap) {
+    for(int i=0; i<rows; i++) {
+      map[i] = newMap[i].clone();
+    }
+  }
+  public int getEmptyCount() {
+    return emptyCount;
+  }
+  public void setEmptyCount(int emptyCount) {
+    this.emptyCount = emptyCount;
+  }
+  public int getTurnCount() {
+    return turnCount;
+  }
+  public int getPlantCount() {
+    return plantCount;
+  }
+  public int getSheepCount() {
+    return sheepCount;
+  }
+  public int getWolfCount() {
+    return wolfCount;
+  }
+  /**
+   * inBounds
+   * This method takes in a row and column and checkts to see if it is within the boundaries of the map.
+   * @param 2 integers representing the current row and column.
+   * @retun A boolean that is true if the row and column are within the boundaries of the map.
+   */
+  public boolean inBounds(int r, int c) {
+    return (r>=0) && (r<rows) && (c>=0) && (c<columns);
+  }
+  
+  /**
+   * moveAnimals
+   * This method loops through the entire map once and will call the move method on the object if it is an animal.
+   */
+  public void moveAnimals() {
+    for(int i=0; i<rows; i++) {
+      for(int j=0; j<columns; j++) {
+        if((map[i][j] instanceof Animal)) {
+          if(!((Animal)map[i][j]).hasMoved()) {
+            ((Animal)map[i][j]).move(i,j,this,moves);
+          }
+        }
+      }
+    } 
+  }
+  
+  /**
+   * updateStatus
+   * This method loops through the entire map and will update the rest of the statuses of the animals aside from movement.
+   * It will drain 1 health from each animal each turn, will update the amounts of each species and print them, will
+   * eliminate the animal from the map if it's health is 0, and will terminate the simulation if a species has become extinct.
+   */
+  public void updateStatus() {
+    //Initialize animal counts and update turn count
+    wolfCount = 0;
+    sheepCount = 0;
+    plantCount = 0;
+    turnCount++;
+    
+    //Loops through the map
+    for(int i=0; i<rows; i++) {
+      for(int j=0; j<columns; j++) {
+        
+        //If there is an animal on the current square, it sets its moved boolean to false, updates the 
+        //count of that species, and drains 1 health from it. If it is a plant just update the plant count.
+        if((map[i][j] instanceof Animal)) {
+          ((Animal)map[i][j]).setMoved(false);
+          if(map[i][j] instanceof Wolf) {
+            wolfCount++;
+          } else {
+            sheepCount++;
+          }
+          map[i][j].setHealth(map[i][j].getHealth()-1);
+          if(map[i][j].getHealth() <= 0) {
+            map[i][j] = null;
+          }
+        } else if(map[i][j] instanceof Plant) {
+          plantCount ++;
+        }
+      }
+    }
+    
+    //Finds the amount of empty squares
+    emptyCount = rows*columns - wolfCount - sheepCount - plantCount;
+    
+    //Statistics of the current turn and species counts.
+    System.out.println("\nNumber of turns elapsed: "+turnCount);
+    System.out.println("Current number of plants: " +plantCount);
+    System.out.println("Current number of sheep: "+sheepCount);
+    System.out.println("Current number of wolves: "+wolfCount);
+  }
+  
+  /**
+   * hasExtinction
+   * This method checks the amount of each species and returns a boolean that holds true 
+   */
+  public boolean hasExtinction() {
+    if((sheepCount == 0) || (plantCount == 0) || (wolfCount == 0)){ 
+      return true;
+    }
+    return false;
+  }
+  public void createPlants(int plantCount) {
+    int plants = 0;
+    plantCount = Math.min(plantCount,emptyCount);
+    while(plants<plantCount) {
+      int row = (int)(Math.random()*rows);
+      int column = (int)(Math.random()*columns);
+      if(map[row][column] == null) {
+        map[row][column] = new Plant(plantHealth);
+        plants++;
+      }
+    }
+    emptyCount -= plantCount;
+  }
+  public void createSheep(int sheepCount) {
+    int sheep = 0;
+    sheepCount = Math.min(sheepCount,emptyCount);
+    while(sheep<sheepCount) {
+      int row = (int)(Math.random()*rows);
+      int column = (int)(Math.random()*columns);
+      if(map[row][column] == null) {
+        map[row][column] = new Sheep(sheepHealth,(int)(sheepHealth*1.5));
+        sheep++;
+      }
+    }
+    emptyCount -= sheepCount;
+  }
+  public void createWolves(int wolfCount) {
+    int wolves = 0;
+    wolfCount = Math.min(wolfCount,emptyCount);
+    while(wolves<wolfCount) {
+      int row = (int)(Math.random()*rows);
+      int column = (int)(Math.random()*columns);
+      if(map[row][column] == null) {
+        map[row][column] = new Wolf(wolfHealth,(int)(wolfHealth*1.5));
+        wolves++;
+      }
+    }
+    emptyCount -= wolfCount;
+  }
+}
